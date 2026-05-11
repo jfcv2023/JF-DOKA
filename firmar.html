@@ -64,9 +64,8 @@ let dibujando = false;
 
 function resizeCanvas() {
   const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width * (window.devicePixelRatio || 1);
-  canvas.height = rect.height * (window.devicePixelRatio || 1);
-  ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+  canvas.width = rect.width;
+  canvas.height = rect.height;
   ctx.strokeStyle = '#003399';
   ctx.lineWidth = 3;
   ctx.lineCap = 'round';
@@ -137,11 +136,16 @@ function confirmar() {
     return;
   }
 
-  const imagen = canvas.toDataURL('image/png');
+  const imagen = canvas.toDataURL('image/jpeg', 0.85);
+  const base64 = imagen.split(',')[1];
 
   if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
-    Telegram.WebApp.sendData(JSON.stringify({ firma: imagen }));
-    Telegram.WebApp.close();
+    try {
+      Telegram.WebApp.sendData(base64);
+      Telegram.WebApp.close();
+    } catch(e) {
+      document.getElementById('status').textContent = 'Error: ' + e.message;
+    }
   } else {
     status.textContent = 'Firma capturada (fuera de Telegram)';
     const link = document.createElement('a');
