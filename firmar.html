@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Firmar documento</title>
+<script src="https://telegram.org/js/telegram-web-app.js" onerror="console.error('Fallo al cargar telegram-web-app.js')"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -120,22 +121,30 @@ function confirmar() {
   }
 
   const datos = JSON.stringify({ w: 300, h: 100, t: trazos });
+  console.log('Telegram:', typeof Telegram, Telegram);
+  console.log('Telegram.WebApp:', typeof Telegram !== 'undefined' ? Telegram.WebApp : 'N/A');
 
   if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
     try {
-      Telegram.WebApp.sendData(datos);
+      const enviado = Telegram.WebApp.sendData(datos);
+      console.log('sendData result:', enviado);
+      status.textContent = 'Firma enviada!';
     } catch(e) {
-      status.textContent = 'Error: ' + e.message;
+      console.error('sendData error:', e);
+      status.textContent = 'Error al enviar: ' + e.message;
     }
     Telegram.WebApp.close();
+  } else if (typeof Telegram !== 'undefined' && Telegram.WebAppProxy) {
+    status.textContent = 'Usando WebAppProxy...';
+    Telegram.WebAppProxy.send({ data: datos });
   } else {
-    // fallback: download as PNG for debugging
+    console.log('Telegram.WebApp no disponible');
+    status.textContent = 'Descargado como PNG (fuera de Telegram)';
     const img = canvas.toDataURL('image/png');
     const link = document.createElement('a');
     link.download = 'firma.png';
     link.href = img;
     link.click();
-    status.textContent = 'Descargado como PNG (fuera de Telegram)';
   }
 }
 
