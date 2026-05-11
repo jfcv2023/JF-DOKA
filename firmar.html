@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Firmar documento</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f5f5f5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    min-height: 100vh;
+  }
+  h2 { margin-bottom: 10px; color: #333; }
+  p.instruction { color: #666; font-size: 14px; margin-bottom: 15px; }
+  #canvas {
+    border: 2px solid #999;
+    border-radius: 8px;
+    background: #fff;
+    touch-action: none;
+    cursor: crosshair;
+    width: 100%;
+    max-width: 500px;
+    height: 200px;
+  }
+  .buttons { margin-top: 15px; display: flex; gap: 12px; }
+  button {
+    padding: 12px 28px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  #btnConfirmar { background: #2b7a3a; color: #fff; }
+  #btnConfirmar:hover { background: #236b30; }
+  #btnLimpiar { background: #bbb; color: #333; }
+  #btnLimpiar:hover { background: #aaa; }
+  #status { margin-top: 15px; color: #555; font-size: 14px; }
+</style>
+</head>
+<body>
+  <h2>Firma del documento</h2>
+  <p class="instruction">Dibuja tu firma en el recuadro con el dedo o el ratón</p>
+  <canvas id="canvas"></canvas>
+  <div class="buttons">
+    <button id="btnLimpiar">Limpiar</button>
+    <button id="btnConfirmar">Confirmar firma</button>
+  </div>
+  <p id="status"></p>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const btnLimpiar = document.getElementById('btnLimpiar');
+const btnConfirmar = document.getElementById('btnConfirmar');
+const status = document.getElementById('status');
+
+let dibujando = false;
+
+function resizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * (window.devicePixelRatio || 1);
+  canvas.height = rect.height * (window.devicePixelRatio || 1);
+  ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+  ctx.strokeStyle = '#003399';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+}
+
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const touch = e.touches ? e.touches[0] : e;
+  return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+}
+
+canvas.addEventListener('mousedown', (e) => {
+  dibujando = true;
+  const p = getPos(e);
+  ctx.beginPath();
+  ctx.moveTo(p.x, p.y);
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (!dibujando) return;
+  const p = getPos(e);
+  ctx.lineTo(p.x, p.y);
+  ctx.stroke();
+});
+
+canvas.addEventListener('mouseup', () => { dibujando = false; });
+canvas.addEventListener('mouseleave', () => { dibujando = false; });
+
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  dibujando = true;
+  const p = getPos(e);
+  ctx.beginPath();
+  ctx.moveTo(p.x, p.y);
+});
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if (!dibujando) return;
+  const p = getPos(e);
+  ctx.lineTo(p.x, p.y);
+  ctx.stroke();
+});
+
+canvas.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  dibujando = false;
+});
+
+function limpiar() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  status.textContent = '';
+}
+
+function estaVacio() {
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+  for (let i = 3; i < data.length; i += 4) {
+    if (data[i] !== 0) return false;
+  }
+  return true;
+}
+
+function confirmar() {
+  if (estaVacio()) {
+    status.textContent = 'Dibuja tu firma antes de confirmar';
+    return;
+  }
+
+  const imagen = canvas.toDataURL('image/png');
+
+  if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+    Telegram.WebApp.sendData(JSON.stringify({ firma: imagen }));
+    Telegram.WebApp.close();
+  } else {
+    status.textContent = 'Firma capturada (fuera de Telegram)';
+    const link = document.createElement('a');
+    link.download = 'firma.png';
+    link.href = imagen;
+    link.click();
+  }
+}
+
+btnLimpiar.addEventListener('click', limpiar);
+btnConfirmar.addEventListener('click', confirmar);
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+  Telegram.WebApp.ready();
+  Telegram.WebApp.expand();
+}
+</script>
+</body>
+</html>
