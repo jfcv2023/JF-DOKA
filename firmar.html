@@ -29,6 +29,8 @@
   #btnConfirmar:hover { background: #236b30; }
   #btnLimpiar { background: #bbb; color: #333; }
   #btnLimpiar:hover { background: #aaa; }
+  #btnCerrar { background: #888; color: #fff; display: none; }
+  #btnCerrar:hover { background: #777; }
   #status { margin-top: 15px; color: #555; font-size: 14px; }
 </style>
 </head>
@@ -39,6 +41,7 @@
 <div class="buttons">
   <button id="btnLimpiar">Limpiar</button>
   <button id="btnConfirmar">Confirmar firma</button>
+  <button id="btnCerrar">Cerrar</button>
 </div>
 <p id="status"></p>
 
@@ -128,12 +131,21 @@ function confirmar() {
     try {
       const enviado = Telegram.WebApp.sendData(datos);
       console.log('sendData result:', enviado);
-      status.textContent = 'Firma enviada!';
+      if (enviado) {
+        status.textContent = 'Enviado! Cerrando...';
+        status.style.color = 'green';
+        setTimeout(() => Telegram.WebApp.close(), 1000);
+      } else {
+        status.textContent = 'Fallo al enviar. Reintenta o cierra manualmente.';
+        status.style.color = 'red';
+        document.getElementById('btnCerrar').style.display = 'inline';
+      }
     } catch(e) {
       console.error('sendData error:', e);
-      status.textContent = 'Error al enviar: ' + e.message;
+      status.textContent = 'Error: ' + e.message;
+      status.style.color = 'red';
+      document.getElementById('btnCerrar').style.display = 'inline';
     }
-    Telegram.WebApp.close();
   } else if (typeof Telegram !== 'undefined' && Telegram.WebAppProxy) {
     status.textContent = 'Usando WebAppProxy...';
     Telegram.WebAppProxy.send({ data: datos });
@@ -150,6 +162,7 @@ function confirmar() {
 
 btnLimpiar.addEventListener('click', limpiar);
 btnConfirmar.addEventListener('click', confirmar);
+document.getElementById('btnCerrar').addEventListener('click', () => Telegram.WebApp.close());
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
