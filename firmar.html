@@ -17,15 +17,14 @@
   }
   h2 { margin-bottom: 10px; color: #333; }
   p.instruction { color: #666; font-size: 14px; margin-bottom: 15px; }
-  #canvas {
+  canvas {
     border: 2px solid #999;
     border-radius: 8px;
     background: #fff;
     touch-action: none;
     cursor: crosshair;
-    width: 100%;
-    max-width: 500px;
-    height: 200px;
+    width: 200px;
+    height: 60px;
   }
   .buttons { margin-top: 15px; display: flex; gap: 12px; }
   button {
@@ -45,7 +44,7 @@
 </head>
 <body>
   <h2>Firma del documento</h2>
-  <p class="instruction">Dibuja tu firma en el recuadro con el dedo o el ratón</p>
+  <p class="instruction">Dibuja tu firma abajo con el dedo o el raton</p>
   <canvas id="canvas"></canvas>
   <div class="buttons">
     <button id="btnLimpiar">Limpiar</button>
@@ -63,11 +62,10 @@ const status = document.getElementById('status');
 let dibujando = false;
 
 function resizeCanvas() {
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width;
-  canvas.height = rect.height;
+  canvas.width = 200;
+  canvas.height = 60;
   ctx.strokeStyle = '#003399';
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 }
@@ -136,16 +134,16 @@ function confirmar() {
     return;
   }
 
-  const imagen = canvas.toDataURL('image/jpeg', 0.85);
+  const imagen = canvas.toDataURL('image/jpeg', 0.5);
   const base64 = imagen.split(',')[1];
 
   if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
     try {
       Telegram.WebApp.sendData(base64);
-      Telegram.WebApp.close();
     } catch(e) {
       document.getElementById('status').textContent = 'Error: ' + e.message;
     }
+    Telegram.WebApp.close();
   } else {
     status.textContent = 'Firma capturada (fuera de Telegram)';
     const link = document.createElement('a');
